@@ -1,0 +1,62 @@
+name: Secrets Scanner
+
+on: pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  TruffleHog:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    container:
+      image: trufflesecurity/trufflehog:latest
+    env:
+      BASE_REF: ${{ github.base_ref }}
+      HEAD_REF: ${{ github.head_ref }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3
+        with:
+          fetch-depth: 0
+
+      - name: Get first commit
+        id: getFirstCommit
+        shell: bash
+        run: |
+          REPO_NAME=$(echo "$GITHUB_REPOSITORY" | cut -d "/" -f 2)
+          git config --global --add safe.directory /__w/"$REPO_NAME"/"$REPO_NAME"
+          FIRST_COMMIT_FULL=$(git log --oneline origin/"$BASE_REF"..origin/"$HEAD_REF" | tail -1)
+          read -r FIRST_COMMIT_HASH REST <<< "$FIRST_COMMIT_FULL"
+          echo "FIRST_COMMIT_HASH=$FIRST_COMMIT_HASH" >> $GITHUB_ENV
+
+      - name: Trufflehog
+        id: trufflehog
+        run: echo "TRUFFLEHOG_OUTPUT=$(trufflehog git file://. --since-commit "$FIRST_COMMIT_HASH" --branch "$HEAD_REF" --exclude-paths=.truffleignore --only-verified --json)" >> $GITHUB_ENV
+
+      - name: Send output to Slack if not empty
+        if: env.TRUFFLEHOG_OUTPUT != ''
+        id: slack
+        uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117
+        with:
+          payload: |
+            {
+              "text": "Trufflehog Alert: \n${{ github.event.pull_request.html_url || github.event.head_commit.url }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Trufflehog Alert: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+          SLACK_WEBHOOK_URL: ${{ secrets.TRUFFLEHOG_SLACK_WEBHOOK }}
+
+      - name: Fail on Trufflehog findings
+        if: env.TRUFFLEHOG_OUTPUT != ''
+        run: exit 1
