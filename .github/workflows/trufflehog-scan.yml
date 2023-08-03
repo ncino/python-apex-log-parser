@@ -27,13 +27,12 @@ jobs:
         run: |
           REPO_NAME=$(echo "$GITHUB_REPOSITORY" | cut -d "/" -f 2)
           git config --global --add safe.directory /__w/"$REPO_NAME"/"$REPO_NAME"
-          FIRST_COMMIT_FULL=$(git log --oneline origin/"$BASE_REF"..origin/"$HEAD_REF" | tail -1)
-          read -r FIRST_COMMIT_HASH REST <<< "$FIRST_COMMIT_FULL"
-          echo "FIRST_COMMIT_HASH=$FIRST_COMMIT_HASH" >> $GITHUB_ENV
+          FIRST_COMMIT=$(git rev-parse origin/"$BASE_REF")
+          echo "FIRST_COMMIT=$FIRST_COMMIT" >> $GITHUB_ENV
 
       - name: Trufflehog
         id: trufflehog
-        run: echo "TRUFFLEHOG_OUTPUT=$(trufflehog git file://. --since-commit "$FIRST_COMMIT_HASH" --branch "$HEAD_REF" --exclude-paths=.truffleignore --only-verified --json)" >> $GITHUB_ENV
+        run: echo "TRUFFLEHOG_OUTPUT=$(trufflehog git file://. --since-commit "$FIRST_COMMIT" --branch "$HEAD_REF" --exclude-paths=.truffleignore --only-verified --json)" >> $GITHUB_ENV
 
       - name: Send output to Slack if not empty
         if: env.TRUFFLEHOG_OUTPUT != ''
