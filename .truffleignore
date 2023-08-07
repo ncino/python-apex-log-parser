@@ -1,0 +1,3 @@
+# This file should contain filepaths that should be ignored
+# during the trufflehog-scan workflow. Each filepath should
+# be on its own line of the file similar to a .gitignore.
