@@ -36,7 +36,7 @@ jobs:
           TRUFFLEHOG_OUTPUT=""
           capturefile=false
           captureline=false
-          for finding in $(trufflehog git file://. --since-commit $FIRST_COMMIT --branch $HEAD_REF --only-verified); do
+          for finding in $(trufflehog git file://. --since-commit $FIRST_COMMIT --branch $HEAD_REF --exclude-paths=.github/.truffleignore --only-verified); do
               if [[ $capturefile == true ]] && [[ -z "$TRUFFLEHOG_OUTPUT" ]]; then
               TRUFFLEHOG_OUTPUT="> - $finding"
               elif [[ $capturefile == true ]] && [[ -n "$TRUFFLEHOG_OUTPUT" ]]; then
