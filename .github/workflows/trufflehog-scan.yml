@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' }}
     container:
-      image: trufflesecurity/trufflehog:latest
+      image: trufflesecurity/trufflehog:3.63.2
     env:
       BASE_REF: ${{ github.base_ref }}
       HEAD_REF: ${{ github.head_ref }}
