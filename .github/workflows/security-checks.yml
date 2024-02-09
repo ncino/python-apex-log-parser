@@ -1,0 +1,20 @@
+name: Security Checks
+
+on: pull_request
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  Security-Checks:
+    name: Security Checks
+    uses: ncino/security-checks/.github/workflows/security-checks.yml@v1
+    with:
+      trufflehog_run: true
+      trufflehog_ignore_list: >-
+        spec/lib/ncino.zip,
+        src/LLC_BI/main/default/staticresources/llc_web_ui/LiveEditor/scripts/common/webimage.htm,
+        src/staticresources/llc_web_ui.resource,
+        staticresources/llc_web_ui.resource
+    secrets: inherit
